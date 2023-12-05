@@ -11,86 +11,28 @@ const testInput = `467..114..
 ...$.*....
 .664.598..`;
 
-const symbols = [...new Set(input.match(/[^\d\.]/g))];
-
-console.log(symbols);
-
-const getPartNumberSum = (input) => {
-  const partArray = input.split("\n").map((row) => row.split(""));
-
+const getPartNumberSum = (partArray) => {
   let sum = 0;
 
   for (let i = 0; i < partArray.length; i++) {
     for (let j = 0; j < partArray[i].length; j++) {
       if (/\d/.test(partArray[i][j])) {
-        const startOfNumberIndex = j;
-        let endOfNumberIndex;
+        const firstIndexOfNumber = j;
 
-        for (let k = j; k < partArray[i].length; k++) {
-          if (/\d/.test(partArray[i][k])) {
-            endOfNumberIndex = k;
-          } else {
-            break;
-          }
-        }
+        let lastIndexOfNumber = getLastIndexOfNumber(
+          partArray[i],
+          firstIndexOfNumber
+        );
 
-        const number = partArray[i]
-          .slice(startOfNumberIndex, endOfNumberIndex + 1)
-          .join("");
+        const number = getNumber(
+          partArray[i],
+          firstIndexOfNumber,
+          lastIndexOfNumber
+        );
 
-        const numberLength = number.length;
-        let isEnginePart = false;
+        let isEnginePart = hasSymbolAdjacentElement(partArray, number, i, j);
 
-        for (let l = 0; l < numberLength; l++) {
-          //check left side of first element
-          if (l === 0) {
-            const leftAdjacentElements = [
-              partArray?.[i - 1]?.[j - 1],
-              partArray?.[i]?.[j - 1],
-              partArray?.[i + 1]?.[j - 1],
-              partArray?.[i - 1]?.[j],
-              partArray?.[i + 1]?.[j],
-            ];
-
-            leftAdjacentElements.forEach((element) => {
-              if (symbols.includes(element)) {
-                isEnginePart = true;
-              }
-            });
-          }
-
-          //check right side of last element
-          if (l === numberLength - 1) {
-            const rightAdjacentElements = [
-              partArray?.[i - 1]?.[j + l],
-              partArray?.[i - 1]?.[j + l + 1],
-              partArray?.[i]?.[j + l + 1],
-              partArray?.[i + 1]?.[j + l],
-              partArray?.[i + 1]?.[j + l + 1],
-            ];
-
-            rightAdjacentElements.forEach((element) => {
-              if (symbols.includes(element)) {
-                isEnginePart = true;
-              }
-            });
-          }
-
-          //check top and bottom of middle elements
-          if (l > 0 && l < numberLength - 1) {
-            const topAdjacentElements = [
-              partArray?.[i - 1]?.[j + l],
-              partArray?.[i + 1]?.[j + l],
-            ];
-
-            topAdjacentElements.forEach((element) => {
-              if (symbols.includes(element)) {
-                isEnginePart = true;
-              }
-            });
-          }
-        }
-        j = j + numberLength;
+        j = j + number.length;
 
         if (isEnginePart) {
           sum += parseInt(number);
@@ -102,9 +44,84 @@ const getPartNumberSum = (input) => {
   return sum;
 };
 
-const testSum = getPartNumberSum(testInput);
+const getLastIndexOfNumber = (line, firstIndexOfNumber) => {
+  let lastIndexOfNumber;
+  for (let i = firstIndexOfNumber; i < line.length; i++) {
+    if (/\d/.test(line[i])) {
+      lastIndexOfNumber = i;
+    } else {
+      break;
+    }
+  }
+  return lastIndexOfNumber;
+};
+
+const getNumber = (line, firstIndexOfNumber, lastIndexOfNumber) =>
+  line.slice(firstIndexOfNumber, lastIndexOfNumber + 1).join("");
+
+const hasSymbolAdjacentElement = (partArray, number, lineIndex, rowIndex) => {
+  for (let l = 0; l < number.length; l++) {
+    const adjacentElements = [];
+
+    //check left side of first element
+    if (l === 0) {
+      const leftAdjacentElements = [
+        partArray?.[lineIndex - 1]?.[rowIndex - 1],
+        partArray?.[lineIndex]?.[rowIndex - 1],
+        partArray?.[lineIndex + 1]?.[rowIndex - 1],
+        partArray?.[lineIndex - 1]?.[rowIndex],
+        partArray?.[lineIndex + 1]?.[rowIndex],
+      ];
+
+      adjacentElements.push(...leftAdjacentElements);
+    }
+
+    //check right side of last element
+    if (l === number.length - 1) {
+      const rightAdjacentElements = [
+        partArray?.[lineIndex - 1]?.[rowIndex + l],
+        partArray?.[lineIndex - 1]?.[rowIndex + l + 1],
+        partArray?.[lineIndex]?.[rowIndex + l + 1],
+        partArray?.[lineIndex + 1]?.[rowIndex + l],
+        partArray?.[lineIndex + 1]?.[rowIndex + l + 1],
+      ];
+
+      adjacentElements.push(...rightAdjacentElements);
+    }
+
+    //check top and bottom of middle elements
+    if (l > 0 && l < number.length - 1) {
+      const topAdjacentElements = [
+        partArray?.[lineIndex - 1]?.[rowIndex + l],
+        partArray?.[lineIndex + 1]?.[rowIndex + l],
+      ];
+
+      adjacentElements.push(...topAdjacentElements);
+    }
+
+    let isEnginePart = isElementEnginePart(adjacentElements);
+
+    if (isEnginePart) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const isElementEnginePart = (adjacentElements) =>
+  adjacentElements.some((element) => symbols.includes(element));
+
+const getPartArray = (input) => input.split("\n").map((row) => row.split(""));
+
+const getSymbols = (input) => [...new Set(input.match(/[^\d\.]/g))];
+
+// Results
+const symbols = getSymbols(input);
+const testArray = getPartArray(testInput);
+const testSum = getPartNumberSum(testArray);
 
 console.log(testSum);
 
-const value = getPartNumberSum(input);
+const inputArray = getPartArray(input);
+const value = getPartNumberSum(inputArray);
 console.log(value);
